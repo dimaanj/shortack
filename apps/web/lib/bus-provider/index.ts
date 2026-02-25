@@ -3,5 +3,5 @@ export {
   getToDestinations,
   getAvailableTimeSlots,
   getMaxFutureDateForMonitor,
-} from "./marshrutochka.js";
-export type { AvailableTimeSlot } from "./marshrutochka.js";
+} from "./marshrutochka";
+export type { AvailableTimeSlot } from "./marshrutochka";

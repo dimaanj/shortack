@@ -1,5 +1,6 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
+  "plugins": ["@nx/js", "@nx/next"],
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
@@ -15,9 +16,7 @@
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"],
       "outputs": ["{projectRoot}/dist", "{projectRoot}/.next"],
-      "configurations": {
-        "production": {}
-      }
+      "configurations": { "production": {} }
     },
     "test": {
       "cache": true,

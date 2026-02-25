@@ -1,7 +1,7 @@
 "use client";
 
-import * as Select from "@radix-ui/react-select";
 import type { DestinationInfo } from "@shortack/monitor-core";
+import { SearchableSelect } from "./SearchableSelect";
 import styles from "./TripRouteSelector.module.css";
 
 export type TripRouteSelectorProps = {
@@ -29,53 +29,23 @@ export function TripRouteSelector({
     <div className={styles.root}>
       <div className={styles.field}>
         <label className={styles.label}>From</label>
-        <Select.Root
+        <SearchableSelect
+          options={fromOptions}
           value={fromValue}
-          onValueChange={(v) => {
-            const opt = fromOptions.find((o) => o.id === v);
-            onFromChange(v, opt?.name ?? "");
-          }}
+          placeholder="Select origin"
           disabled={fromDisabled}
-        >
-          <Select.Trigger className={styles.trigger}>
-            <Select.Value placeholder="Select origin" />
-            <Select.Icon className={styles.icon} />
-          </Select.Trigger>
-          <Select.Portal>
-            <Select.Content className={styles.content}>
-              {fromOptions.map((opt) => (
-                <Select.Item key={opt.id} value={opt.id} className={styles.item}>
-                  <Select.ItemText>{opt.name}</Select.ItemText>
-                </Select.Item>
-              ))}
-            </Select.Content>
-          </Select.Portal>
-        </Select.Root>
+          onChange={onFromChange}
+        />
       </div>
       <div className={styles.field}>
         <label className={styles.label}>To</label>
-        <Select.Root
+        <SearchableSelect
+          options={toOptions}
           value={toValue}
-          onValueChange={(v) => {
-            const opt = toOptions.find((o) => o.id === v);
-            onToChange(v, opt?.name ?? "");
-          }}
+          placeholder="Select destination"
           disabled={toDisabled}
-        >
-          <Select.Trigger className={styles.trigger}>
-            <Select.Value placeholder="Select destination" />
-            <Select.Icon className={styles.icon} />
-          </Select.Trigger>
-          <Select.Portal>
-            <Select.Content className={styles.content}>
-              {toOptions.map((opt) => (
-                <Select.Item key={opt.id} value={opt.id} className={styles.item}>
-                  <Select.ItemText>{opt.name}</Select.ItemText>
-                </Select.Item>
-              ))}
-            </Select.Content>
-          </Select.Portal>
-        </Select.Root>
+          onChange={onToChange}
+        />
       </div>
     </div>
   );

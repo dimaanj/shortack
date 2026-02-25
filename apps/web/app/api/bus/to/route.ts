@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToDestinations } from "@shortack/bus-provider";
+import { getToDestinations } from "../../../../lib/bus-provider";
 
 export async function GET(request: NextRequest) {
   const fromId = request.nextUrl.searchParams.get("fromId");

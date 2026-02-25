@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getFromDestinations } from "@shortack/bus-provider";
+import { getFromDestinations } from "../../../../lib/bus-provider";
 
 export async function GET() {
   try {

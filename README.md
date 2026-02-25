@@ -6,12 +6,14 @@ Bus seat availability monitor – Phase 1 monorepo (Nx).
 
 ```
 shortack/
-├── apps/web          # NextJS app with trip display
+├── apps/web          # NextJS app (trip display + Marshrutochka API in lib/bus-provider)
 ├── packages/
-│   ├── monitor-core  # Types, slot diff, date utils
-│   └── bus-provider  # Marshrutochka API client
-└── nx.json
+│   └── monitor-core  # Types, slot diff, date utils
+├── nx.json           # Nx config with @nx/js and @nx/next plugins
+└── package.json
 ```
+
+Configuration is inferred by Nx plugins from `package.json` scripts and tool configs—no `project.json` files.
 
 ## Commands
 
@@ -33,7 +35,7 @@ npm run test
 
 - Monorepo with Nx
 - `@shortack/monitor-core`: types, slot diff, date utilities
-- `@shortack/bus-provider`: Marshrutochka API (destinations, time slots)
+- Marshrutochka API client in `apps/web/lib/bus-provider` (destinations, time slots)
 - NextJS app with vertical slices (trips), container/presentational pattern
 - Trip display: route selector (from/to), date picker, available time slots
 - CSS modules + Radix UI

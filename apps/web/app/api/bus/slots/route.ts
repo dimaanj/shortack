@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAvailableTimeSlots } from "@shortack/bus-provider";
+import { getAvailableTimeSlots } from "../../../../lib/bus-provider";
 
 export async function GET(request: NextRequest) {
   const fromId = request.nextUrl.searchParams.get("fromId");
