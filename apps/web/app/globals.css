@@ -1,0 +1,33 @@
+:root {
+  --color-bg: #0f0f12;
+  --color-surface: #1a1a1f;
+  --color-border: #2a2a32;
+  --color-text: #e8e8ed;
+  --color-text-muted: #8a8a96;
+  --color-accent: #6366f1;
+  --color-accent-hover: #818cf8;
+  --font-sans: "DM Sans", system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
+  min-height: 100vh;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--color-accent-hover);
+}

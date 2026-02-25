@@ -1,0 +1,14 @@
+node_modules
+dist
+.next
+out
+.nx
+.turbo
+.env
+.env.local
+.env.*.local
+.idea
+.vscode
+*.log
+.DS_Store
+coverage
