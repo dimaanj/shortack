@@ -1,8 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  transpilePackages: ["@shortack/monitor-core"],
+  transpilePackages: [
+    "@shortack/monitor-core",
+    "@shortack/queue",
+  ],
   experimental: {
-    serverComponentsExternalPackages: ["pino", "pino-pretty"],
+    serverComponentsExternalPackages: ["pino", "pino-pretty", "firebase-admin"],
   },
   webpack: (config, { dev }) => {
     if (dev) {

@@ -2,16 +2,14 @@
   "name": "shortack",
   "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "workspaces": ["apps/*", "packages/*"],
   "scripts": {
     "build": "nx run-many -t build",
     "dev": "nx run web:dev",
     "lint": "nx run-many -t lint",
     "test": "nx run-many -t test",
-    "nx": "nx"
+    "nx": "nx",
+    "worker": "npm run worker -w @shortack/web"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",

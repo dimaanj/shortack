@@ -16,6 +16,16 @@ export type MonitorData = {
   date: string;
 };
 
+export type MonitorStatus = "ACTIVE" | "STOPPED";
+
+/** Stored monitor document (e.g. Firestore) */
+export type MonitorRecord = MonitorData & {
+  id: string;
+  status: MonitorStatus;
+  prevSlots: AvailableTimeSlot[];
+  createdAt: string; // ISO
+};
+
 export type SlotDiff = {
   added: AvailableTimeSlot[];
   removed: AvailableTimeSlot[];

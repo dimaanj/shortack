@@ -6,11 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "worker": "tsx workers/monitor-worker.ts"
   },
   "dependencies": {
-    "@shortack/bus-provider": "*",
     "@shortack/monitor-core": "*",
+    "@shortack/queue": "*",
+    "firebase-admin": "^12.0.0",
     "next": "14.2.18",
     "node-html-parser": "^6.1.12",
     "pino": "^9.5.0",
@@ -22,6 +24,7 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "tsx": "^4.19.2",
     "typescript": "~5.3.3"
   }
 }
