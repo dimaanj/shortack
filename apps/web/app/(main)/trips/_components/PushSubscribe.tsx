@@ -34,7 +34,15 @@ export function PushSubscribe({ defaultUserId = "dev" }: { defaultUserId?: strin
       const { publicKey } = await vapidRes.json();
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
-        setMessage("Permission denied");
+        if (permission === "denied") {
+          setMessage(
+            "Notifications blocked. Enable them in your browser settings for this site and try again."
+          );
+        } else {
+          setMessage(
+            "Permission not granted. Please allow notifications when the browser prompts you."
+          );
+        }
         setStatus("idle");
         return;
       }

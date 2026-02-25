@@ -1,3 +1,11 @@
+import path from "path";
+import { fileURLToPath } from "url";
+import dotenv from "dotenv";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "../../../.env") });
+
+import pino from "pino";
 import { Worker } from "bullmq";
 import webPush from "web-push";
 import {
@@ -12,6 +20,12 @@ import {
   updateMonitorPrevSlots,
   getPushSubscriptionsByUserId,
 } from "./firestore";
+
+const log = pino(
+  process.env.NODE_ENV === "development"
+    ? { name: "monitor-worker", transport: { target: "pino-pretty", options: { colorize: true } } }
+    : { name: "monitor-worker" }
+);
 
 const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
 if (vapidPrivateKey) {
@@ -32,10 +46,18 @@ async function sendPushForNewSlots(
   toName: string
 ): Promise<void> {
   if (!vapidPrivateKey) {
-    console.warn("VAPID_PRIVATE_KEY not set, skipping push");
+    log.warn({ monitorId, userId }, "VAPID_PRIVATE_KEY not set, skipping push");
     return;
   }
   const subscriptions = await getPushSubscriptionsByUserId(userId);
+  if (subscriptions.length === 0) {
+    log.info({ monitorId, userId }, "Triggering push but no subscriptions for userId");
+    return;
+  }
+  log.info(
+    { monitorId, userId, newSlots: added, subscriptionCount: subscriptions.length },
+    "Triggering push notifications"
+  );
   const payload = JSON.stringify({
     title: "Seats available",
     body: `${fromName} → ${toName}: ${added.join(", ")}`,
@@ -51,8 +73,9 @@ async function sendPushForNewSlots(
         payload,
         { TTL: 60 }
       );
+      log.info({ monitorId, endpoint: sub.endpoint?.slice(0, 60) }, "Push sent");
     } catch (err) {
-      console.error(`Push failed for ${sub.endpoint}:`, err);
+      log.error({ monitorId, endpoint: sub.endpoint, err }, "Push failed");
     }
   }
 }
@@ -63,7 +86,7 @@ const worker = new Worker<MonitorPollJobData>(
     const { monitorId } = job.data;
     const monitor = await getMonitorById(monitorId);
     if (!monitor) {
-      console.warn(`Monitor ${monitorId} not found, skipping`);
+      log.warn({ monitorId }, "Monitor not found, skipping");
       return;
     }
     if (monitor.status !== "ACTIVE") {
@@ -77,12 +100,14 @@ const worker = new Worker<MonitorPollJobData>(
     });
     const { added } = getSlotDiff(monitor.prevSlots, currSlots);
     await updateMonitorPrevSlots(monitorId, currSlots);
-    if (added.length > 0) {
-      console.log(`Monitor ${monitorId}: new slots ${added.join(", ")}`);
+    // TEMPORARY: send push when any slots exist (for testing). Revert to: added.length > 0
+    const slotsToNotify = currSlots.length > 0 ? currSlots : added;
+    if (slotsToNotify.length > 0) {
+      log.info({ monitorId, slots: slotsToNotify }, "Slots available, sending push notifications");
       await sendPushForNewSlots(
         monitorId,
         monitor.userId,
-        added,
+        slotsToNotify,
         monitor.from.name,
         monitor.to.name
       );
@@ -95,14 +120,14 @@ const worker = new Worker<MonitorPollJobData>(
 );
 
 worker.on("completed", (job) => {
-  console.log(`Job ${job.id} completed`);
+  log.info({ jobId: job.id }, "Job completed");
 });
 
 worker.on("failed", (job, err) => {
-  console.error(`Job ${job?.id} failed:`, err);
+  log.error({ jobId: job?.id, err }, "Job failed");
 });
 
-console.log("Monitor worker started");
+log.info("Monitor worker started");
 
 process.on("SIGTERM", async () => {
   await worker.close();
