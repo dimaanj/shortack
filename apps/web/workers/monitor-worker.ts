@@ -1,4 +1,5 @@
 import { Worker } from "bullmq";
+import webPush from "web-push";
 import {
   getConnection,
   MONITOR_POLL_QUEUE_NAME,
@@ -6,9 +7,55 @@ import {
 } from "@shortack/queue";
 import { getAvailableTimeSlots } from "../lib/bus-provider";
 import { getSlotDiff, stringToDate } from "@shortack/monitor-core";
-import { getMonitorById, updateMonitorPrevSlots } from "./firestore";
+import {
+  getMonitorById,
+  updateMonitorPrevSlots,
+  getPushSubscriptionsByUserId,
+} from "./firestore";
+
+const vapidPrivateKey = process.env.VAPID_PRIVATE_KEY;
+if (vapidPrivateKey) {
+  webPush.setVapidDetails(
+    "mailto:dev@shortack.local",
+    process.env.VAPID_PUBLIC_KEY!,
+    vapidPrivateKey
+  );
+}
 
 const connection = getConnection();
+
+async function sendPushForNewSlots(
+  monitorId: string,
+  userId: string,
+  added: string[],
+  fromName: string,
+  toName: string
+): Promise<void> {
+  if (!vapidPrivateKey) {
+    console.warn("VAPID_PRIVATE_KEY not set, skipping push");
+    return;
+  }
+  const subscriptions = await getPushSubscriptionsByUserId(userId);
+  const payload = JSON.stringify({
+    title: "Seats available",
+    body: `${fromName} → ${toName}: ${added.join(", ")}`,
+    url: `/monitors/${monitorId}`,
+  });
+  for (const sub of subscriptions) {
+    try {
+      await webPush.sendNotification(
+        {
+          endpoint: sub.endpoint,
+          keys: { p256dh: sub.keys.p256dh, auth: sub.keys.auth },
+        },
+        payload,
+        { TTL: 60 }
+      );
+    } catch (err) {
+      console.error(`Push failed for ${sub.endpoint}:`, err);
+    }
+  }
+}
 
 const worker = new Worker<MonitorPollJobData>(
   MONITOR_POLL_QUEUE_NAME,
@@ -32,7 +79,13 @@ const worker = new Worker<MonitorPollJobData>(
     await updateMonitorPrevSlots(monitorId, currSlots);
     if (added.length > 0) {
       console.log(`Monitor ${monitorId}: new slots ${added.join(", ")}`);
-      // Phase 3: enqueue push notification job
+      await sendPushForNewSlots(
+        monitorId,
+        monitor.userId,
+        added,
+        monitor.from.name,
+        monitor.to.name
+      );
     }
   },
   {

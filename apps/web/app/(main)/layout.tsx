@@ -22,6 +22,9 @@ export default function MainLayout({
         <Link href="/trips" style={{ fontSize: "0.875rem" }}>
           Trips
         </Link>
+        <Link href="/monitors" style={{ fontSize: "0.875rem" }}>
+          Monitors
+        </Link>
         {process.env.NODE_ENV !== "production" && (
           <Link href="/dev/monitors-queue" style={{ fontSize: "0.875rem" }}>
             Dev: Monitors &amp; Queue

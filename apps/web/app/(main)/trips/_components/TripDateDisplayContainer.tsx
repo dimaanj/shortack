@@ -12,6 +12,8 @@ type RouteState = {
 
 type TripDateDisplayContainerProps = {
   route: RouteState;
+  selectedDate: string;
+  onDateChange: (date: string) => void;
 };
 
 function getDateRange() {
@@ -28,8 +30,7 @@ function getDateRange() {
   return dates;
 }
 
-export function TripDateDisplayContainer({ route }: TripDateDisplayContainerProps) {
-  const [selectedDate, setSelectedDate] = useState<string>("");
+export function TripDateDisplayContainer({ route, selectedDate, onDateChange }: TripDateDisplayContainerProps) {
   const [slots, setSlots] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +91,7 @@ export function TripDateDisplayContainer({ route }: TripDateDisplayContainerProp
         <select
           id="trip-date"
           value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
+          onChange={(e) => onDateChange(e.target.value)}
           style={{
             width: "100%",
             padding: "0.625rem 0.875rem",

@@ -3,6 +3,14 @@ import { getFirestore } from "firebase-admin/firestore";
 import type { MonitorRecord } from "@shortack/monitor-core";
 
 const MONITORS_COLLECTION = "monitors";
+const PUSH_SUBSCRIPTIONS_COLLECTION = "push_subscriptions";
+
+export type PushSubscriptionRecord = {
+  userId: string;
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+  createdAt: string;
+};
 
 function getDb() {
   const apps = getApps();
@@ -34,4 +42,14 @@ export async function updateMonitorPrevSlots(
     .collection(MONITORS_COLLECTION)
     .doc(id)
     .update({ prevSlots });
+}
+
+export async function getPushSubscriptionsByUserId(
+  userId: string
+): Promise<PushSubscriptionRecord[]> {
+  const snap = await getDb()
+    .collection(PUSH_SUBSCRIPTIONS_COLLECTION)
+    .where("userId", "==", userId)
+    .get();
+  return snap.docs.map((d) => d.data() as PushSubscriptionRecord);
 }

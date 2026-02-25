@@ -1,0 +1,122 @@
+.page {
+  max-width: 48rem;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.subtitle {
+  color: var(--color-text-muted);
+  margin: 0 0 1rem 0;
+  font-size: 0.9375rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  margin-bottom: 0.5rem;
+}
+
+.input {
+  margin-left: 0.5rem;
+  padding: 0.375rem 0.5rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  color: var(--color-text);
+  font-size: 0.875rem;
+  width: 10rem;
+}
+
+.refreshButton {
+  padding: 0.5rem 1rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font-size: 0.875rem;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+
+.refreshButton:hover:not(:disabled) {
+  background: var(--color-border);
+}
+
+.refreshButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.error {
+  font-size: 0.875rem;
+  color: #ef4444;
+  margin: 0 0 1rem 0;
+}
+
+.empty {
+  font-size: 0.9375rem;
+  color: var(--color-text-muted);
+  margin: 1rem 0 0 0;
+}
+
+.tableWrap {
+  overflow-x: auto;
+  margin-top: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+}
+
+.table th,
+.table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.table th {
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+}
+
+.table tr:last-child td {
+  border-bottom: none;
+}
+
+.statusActive {
+  color: #22c55e;
+  font-weight: 500;
+}
+
+.statusStopped {
+  color: var(--color-text-muted);
+}
+
+.stopButton {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8125rem;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.stopButton:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.stopButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

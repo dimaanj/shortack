@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { TripRouteSelectorContainer } from "./_components/TripRouteSelectorContainer";
 import { TripDateDisplayContainer } from "./_components/TripDateDisplayContainer";
+import { PushSubscribe } from "./_components/PushSubscribe";
+import { StartMonitorBlock } from "./_components/StartMonitorBlock";
 import type { DestinationInfo } from "@shortack/monitor-core";
 import styles from "./trips.module.css";
 
@@ -11,6 +13,7 @@ export function TripsPageContainer() {
     from: DestinationInfo | null;
     to: DestinationInfo | null;
   }>({ from: null, to: null });
+  const [selectedDate, setSelectedDate] = useState<string>("");
 
   return (
     <div className={styles.page}>
@@ -22,7 +25,20 @@ export function TripsPageContainer() {
         route={route}
         onRouteChange={setRoute}
       />
-      <TripDateDisplayContainer route={route} />
+      <TripDateDisplayContainer
+        route={route}
+        selectedDate={selectedDate}
+        onDateChange={setSelectedDate}
+      />
+      {route.from && route.to && selectedDate && (
+        <StartMonitorBlock
+          from={route.from}
+          to={route.to}
+          date={selectedDate}
+          defaultUserId="dev"
+        />
+      )}
+      <PushSubscribe defaultUserId="dev" />
     </div>
   );
 }

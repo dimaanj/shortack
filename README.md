@@ -51,3 +51,11 @@ For local Firestore: `FIRESTORE_EMULATOR_HOST=http://localhost:8080` and `FIREBA
   - `GET /api/monitors/[id]` – get one
   - `DELETE /api/monitors/[id]` – stop monitor (remove repeatable job, set status STOPPED)
 - **Worker**: `npm run worker` in apps/web – processes poll jobs (fetch slots, diff, update prevSlots)
+
+## Phase 3 (Push + worker integration)
+
+- **Firestore**: `push_subscriptions` collection (userId, endpoint, keys) for Web Push subscriptions.
+- **API**: `GET /api/push/vapid-public` (public key for client), `POST /api/push/subscribe` (body: `{ userId, subscription }`).
+- **Worker**: When new slots are found (`added.length > 0`), worker loads push subscriptions for the monitor’s `userId` and sends a Web Push (title “Seats available”, body with route and times, `url` to monitor).
+- **Env**: `VAPID_PUBLIC_KEY` and `VAPID_PRIVATE_KEY` (generate with `npx web-push generate-vapid-keys`); set in `apps/web/.env.local` and when running the worker.
+- **Client**: Service worker `public/sw.js` handles `push` and `notificationclick`. Trips page has a “Push notifications” block: set User ID (e.g. `dev`), click “Enable notifications” to subscribe; use the same User ID when creating a monitor so the worker can send push to you.

@@ -24,3 +24,4 @@ export function getFirestoreClient(): Firestore {
 }
 
 export const MONITORS_COLLECTION = "monitors";
+export const PUSH_SUBSCRIPTIONS_COLLECTION = "push_subscriptions";
