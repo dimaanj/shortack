@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PwaShell } from "./_components/PwaShell";
 
 export default function MainLayout({
   children,
@@ -6,6 +7,7 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
+    <PwaShell>
     <div>
       <header
         style={{
@@ -33,5 +35,6 @@ export default function MainLayout({
       </header>
       <main style={{ padding: "2rem" }}>{children}</main>
     </div>
+    </PwaShell>
   );
 }

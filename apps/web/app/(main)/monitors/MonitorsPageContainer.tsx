@@ -1,54 +1,28 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import type { MonitorRecord } from "@shortack/monitor-core";
+import { useMonitors, useStopMonitor } from "../entities/monitors";
 import styles from "./monitors.module.css";
 
 export function MonitorsPageContainer() {
   const [userId, setUserId] = useState("dev");
-  const [monitors, setMonitors] = useState<MonitorRecord[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [stoppingId, setStoppingId] = useState<string | null>(null);
 
-  const fetchMonitors = useCallback(async () => {
-    if (!userId.trim()) {
-      setMonitors([]);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/monitors?userId=${encodeURIComponent(userId.trim())}`);
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
-      setMonitors(Array.isArray(data) ? data : []);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to load monitors");
-      setMonitors([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    fetchMonitors();
-  }, [fetchMonitors]);
+  const { monitors, isLoading, error, refetch } = useMonitors(userId);
+  const stopMonitorMutation = useStopMonitor(userId);
 
   const handleStop = async (id: string) => {
     setStoppingId(id);
     try {
-      const res = await fetch(`/api/monitors/${id}`, { method: "DELETE" });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
-      setMonitors((prev) => prev.filter((m) => m.id !== id));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to stop monitor");
+      await stopMonitorMutation.mutateAsync(id);
     } finally {
       setStoppingId(null);
     }
   };
+
+  const hasUserId = !!userId.trim();
 
   return (
     <div className={styles.page}>
@@ -69,14 +43,14 @@ export function MonitorsPageContainer() {
       </label>
       <button
         type="button"
-        onClick={fetchMonitors}
-        disabled={loading}
+        onClick={() => refetch()}
+        disabled={isLoading}
         className={styles.refreshButton}
       >
-        {loading ? "Loading…" : "Refresh"}
+        {isLoading ? "Loading…" : "Refresh"}
       </button>
-      {error && <p className={styles.error}>{error}</p>}
-      {!loading && monitors.length === 0 && userId.trim() && !error && (
+      {error && <p className={styles.error}>{error.message}</p>}
+      {!isLoading && monitors.length === 0 && hasUserId && !error && (
         <p className={styles.empty}>No monitors for this user.</p>
       )}
       {monitors.length > 0 && (
@@ -93,7 +67,7 @@ export function MonitorsPageContainer() {
               </tr>
             </thead>
             <tbody>
-              {monitors.map((m) => (
+              {monitors.map((m: MonitorRecord) => (
                 <tr key={m.id}>
                   <td>{m.from.name}</td>
                   <td>{m.to.name}</td>

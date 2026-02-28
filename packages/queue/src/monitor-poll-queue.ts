@@ -21,27 +21,25 @@ export function getMonitorPollQueue(): Queue<MonitorPollJobData> {
   return queue;
 }
 
-/** Add a repeatable poll job for a monitor (every 20s). Call when creating a monitor. */
-export async function addMonitorPollJob(monitorId: string): Promise<void> {
+/**
+ * Add or update a repeatable poll job for a filter set (every 20s).
+ * Uses BullMQ Job Scheduler API (getRepeatableJobs/removeRepeatableByKey are deprecated in v6).
+ * Multiple users with same from/to/date share one scheduler; upsert avoids duplicates.
+ */
+export async function addMonitorPollJob(filterKey: string): Promise<void> {
   const q = getMonitorPollQueue();
-  await q.add(
-    "poll",
-    { monitorId },
-    {
-      jobId: monitorId,
-      repeat: {
-        every: MONITOR_POLL_INTERVAL_MS,
-      },
-    }
+  await q.upsertJobScheduler(
+    filterKey,
+    { every: MONITOR_POLL_INTERVAL_MS },
+    { name: "poll", data: { filterKey } }
   );
 }
 
-/** Remove the repeatable poll job for a monitor. Call when stopping a monitor. */
-export async function removeMonitorPollJob(monitorId: string): Promise<void> {
+/**
+ * Remove the repeatable poll job for a filter set.
+ * Call only when the last active monitor with this filter is stopped.
+ */
+export async function removeMonitorPollJob(filterKey: string): Promise<void> {
   const q = getMonitorPollQueue();
-  const repeatableJobs = await q.getRepeatableJobs();
-  const job = repeatableJobs.find(
-    (j) => j.id === monitorId || (j.key?.includes(monitorId) ?? false)
-  );
-  if (job?.key) await q.removeRepeatableByKey(job.key);
+  await q.removeJobScheduler(filterKey);
 }

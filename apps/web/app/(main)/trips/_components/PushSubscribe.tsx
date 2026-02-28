@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { getVapidPublicKey } from "../data/pushApi";
+import { usePushSubscribe } from "../domain/push";
 import styles from "./PushSubscribe.module.css";
 
 type Status = "idle" | "loading" | "subscribed" | "unsupported" | "error";
@@ -9,6 +11,8 @@ export function PushSubscribe({ defaultUserId = "dev" }: { defaultUserId?: strin
   const [userId, setUserId] = useState(defaultUserId);
   const [status, setStatus] = useState<Status>("idle");
   const [message, setMessage] = useState<string>("");
+
+  const pushSubscribeMutation = usePushSubscribe();
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -26,12 +30,7 @@ export function PushSubscribe({ defaultUserId = "dev" }: { defaultUserId?: strin
     try {
       const reg = await navigator.serviceWorker.register("/sw.js");
       await (reg as unknown as { ready: Promise<ServiceWorkerRegistration> }).ready;
-      const vapidRes = await fetch("/api/push/vapid-public");
-      if (!vapidRes.ok) {
-        const data = await vapidRes.json().catch(() => ({}));
-        throw new Error(data.error || "VAPID not configured");
-      }
-      const { publicKey } = await vapidRes.json();
+      const publicKey = await getVapidPublicKey();
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
         if (permission === "denied") {
@@ -48,29 +47,28 @@ export function PushSubscribe({ defaultUserId = "dev" }: { defaultUserId?: strin
       }
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
+        // The PushManager API expects an ArrayBuffer; browsers accept Uint8Array.buffer.
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
       const subJson = sub.toJSON();
-      const res = await fetch("/api/push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          subscription: {
-            endpoint: subJson.endpoint,
-            keys: subJson.keys,
-          },
-        }),
+      console.log('subJson', subJson);
+      await pushSubscribeMutation.mutateAsync({
+        userId,
+        subscription: {
+          endpoint: subJson.endpoint,
+          keys: subJson.keys ?? undefined,
+        },
       });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Subscribe failed");
-      }
       setStatus("subscribed");
       setMessage("You'll get notified when seats become available.");
     } catch (e) {
       setStatus("error");
-      setMessage(e instanceof Error ? e.message : "Something went wrong");
+      const mutationError = pushSubscribeMutation.error;
+      if (mutationError instanceof Error) {
+        setMessage(mutationError.message);
+      } else {
+        setMessage(e instanceof Error ? e.message : "Something went wrong");
+      }
     }
   };
 
@@ -114,11 +112,13 @@ export function PushSubscribe({ defaultUserId = "dev" }: { defaultUserId?: strin
   );
 }
 
-function urlBase64ToUint8Array(base64String: string): Uint8Array {
+function urlBase64ToUint8Array(base64String: string): ArrayBuffer {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
   const rawData = atob(base64);
   const output = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; i++) output[i] = rawData.charCodeAt(i);
-  return output;
+  for (let i = 0; i < rawData.length; i++) {
+    output[i] = rawData.charCodeAt(i);
+  }
+  return output.buffer;
 }

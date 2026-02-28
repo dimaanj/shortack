@@ -14,9 +14,9 @@ import {
   type MonitorPollJobData,
 } from "@shortack/queue";
 import { getAvailableTimeSlots } from "../lib/bus-provider";
-import { getSlotDiff, stringToDate } from "@shortack/monitor-core";
+import { getSlotDiff, parseMonitorFilterKey, stringToDate } from "@shortack/monitor-core";
 import {
-  getMonitorById,
+  getActiveMonitorsByFilter,
   updateMonitorPrevSlots,
   getPushSubscriptionsByUserId,
 } from "./firestore";
@@ -83,34 +83,38 @@ async function sendPushForNewSlots(
 const worker = new Worker<MonitorPollJobData>(
   MONITOR_POLL_QUEUE_NAME,
   async (job) => {
-    const { monitorId } = job.data;
-    const monitor = await getMonitorById(monitorId);
-    if (!monitor) {
-      log.warn({ monitorId }, "Monitor not found, skipping");
+    const { filterKey } = job.data;
+    const { fromId, toId, date } = parseMonitorFilterKey(filterKey);
+    const monitors = await getActiveMonitorsByFilter(fromId, toId, date);
+    if (monitors.length === 0) {
+      log.debug({ filterKey }, "No active monitors for filter, skipping");
       return;
     }
-    if (monitor.status !== "ACTIVE") {
-      return;
-    }
-    const date = stringToDate(monitor.date);
+    const first = monitors[0];
+    const dateObj = stringToDate(first.date);
     const currSlots = await getAvailableTimeSlots({
-      from: monitor.from,
-      to: monitor.to,
-      date,
+      from: first.from,
+      to: first.to,
+      date: dateObj,
     });
-    const { added } = getSlotDiff(monitor.prevSlots, currSlots);
-    await updateMonitorPrevSlots(monitorId, currSlots);
-    // TEMPORARY: send push when any slots exist (for testing). Revert to: added.length > 0
-    const slotsToNotify = currSlots.length > 0 ? currSlots : added;
-    if (slotsToNotify.length > 0) {
-      log.info({ monitorId, slots: slotsToNotify }, "Slots available, sending push notifications");
-      await sendPushForNewSlots(
-        monitorId,
-        monitor.userId,
-        slotsToNotify,
-        monitor.from.name,
-        monitor.to.name
-      );
+    for (const monitor of monitors) {
+      const { added } = getSlotDiff(monitor.prevSlots, currSlots);
+      await updateMonitorPrevSlots(monitor.id, currSlots);
+      // TEMPORARY: send push when any slots exist (for testing). Revert to: added.length > 0
+      const slotsToNotify = currSlots.length > 0 ? currSlots : added;
+      if (slotsToNotify.length > 0) {
+        log.info(
+          { monitorId: monitor.id, slots: slotsToNotify },
+          "Slots available, sending push notifications"
+        );
+        await sendPushForNewSlots(
+          monitor.id,
+          monitor.userId,
+          slotsToNotify,
+          monitor.from.name,
+          monitor.to.name
+        );
+      }
     }
   },
   {

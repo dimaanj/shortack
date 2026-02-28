@@ -1,67 +1,27 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
+import { useDevMonitors, useQueueInfo } from "./domain/monitorsQueue";
+import type { MonitorRecord, QueueInfo } from "./data/queueApi";
 import styles from "./monitors-queue.module.css";
-
-type MonitorRecord = {
-  id: string;
-  userId: string;
-  busProvider: string;
-  from: { id: string; name: string };
-  to: { id: string; name: string };
-  date: string;
-  status: string;
-  prevSlots: string[];
-  createdAt: string;
-};
-
-type QueueInfo = {
-  queueName: string;
-  intervalMs: number;
-  repeatableJobs: { id: string | null; key: string; name: string; next: number }[];
-  jobCounts: { waiting: number; active: number; completed: number; failed: number };
-};
 
 export default function DevMonitorsQueuePage() {
   const [userId, setUserId] = useState("dev");
-  const [monitors, setMonitors] = useState<MonitorRecord[] | null>(null);
-  const [queueInfo, setQueueInfo] = useState<QueueInfo | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const [monRes, queueRes] = await Promise.all([
-        fetch(`/api/monitors?userId=${encodeURIComponent(userId)}`),
-        fetch("/api/dev/queue"),
-      ]);
-      if (!monRes.ok) throw new Error(await monRes.text());
-      if (!queueRes.ok) {
-        if (queueRes.status === 404) setQueueInfo(null);
-        else throw new Error(await queueRes.text());
-      } else {
-        const queueData = await queueRes.json();
-        setQueueInfo(queueData);
-      }
-      const monData = await monRes.json();
-      setMonitors(monData);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to fetch");
-      setMonitors(null);
-      setQueueInfo(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const {
+    monitors,
+    isLoading: monitorsLoading,
+    error: monitorsError,
+  } = useDevMonitors(userId);
 
-  useEffect(() => {
-    fetchData();
-    const t = setInterval(fetchData, 5000);
-    return () => clearInterval(t);
-  }, [userId]);
+  const {
+    queueInfo,
+    isLoading: queueLoading,
+    error: queueError,
+  } = useQueueInfo();
+
+  const error = monitorsError ?? queueError;
 
   return (
     <div className={styles.page}>
@@ -86,8 +46,10 @@ export default function DevMonitorsQueuePage() {
             className={styles.input}
           />
         </label>
-        {loading && !monitors && <p className={styles.muted}>Loading…</p>}
-        {error && <p className={styles.error}>{error}</p>}
+        {monitorsLoading && monitors.length === 0 && (
+          <p className={styles.muted}>Loading…</p>
+        )}
+        {error && <p className={styles.error}>{error.message}</p>}
         {monitors && (
           <div className={styles.tableWrap}>
             <table className={styles.table}>
@@ -109,19 +71,29 @@ export default function DevMonitorsQueuePage() {
                     </td>
                   </tr>
                 ) : (
-                  monitors.map((m) => (
+                  monitors.map((m: MonitorRecord) => (
                     <tr key={m.id}>
                       <td className={styles.mono}>{m.id}</td>
-                      <td>{m.from.name} → {m.to.name}</td>
+                      <td>
+                        {m.from.name} → {m.to.name}
+                      </td>
                       <td>{m.date}</td>
                       <td>
-                        <span className={m.status === "ACTIVE" ? styles.badgeActive : styles.badgeStopped}>
+                        <span
+                          className={
+                            m.status === "ACTIVE"
+                              ? styles.badgeActive
+                              : styles.badgeStopped
+                          }
+                        >
                           {m.status}
                         </span>
                       </td>
                       <td>{m.prevSlots?.length ?? 0}</td>
                       <td className={styles.small}>
-                        {m.createdAt ? new Date(m.createdAt).toLocaleString() : "—"}
+                        {m.createdAt
+                          ? new Date(m.createdAt).toLocaleString()
+                          : "—"}
                       </td>
                     </tr>
                   ))
@@ -134,26 +106,29 @@ export default function DevMonitorsQueuePage() {
 
       <div className={styles.section}>
         <h2 className={styles.sectionTitle}>Queue: monitor:poll</h2>
-        {queueInfo === undefined && !error && (
+        {queueLoading && !queueInfo && !error && (
           <p className={styles.muted}>Loading queue…</p>
         )}
-        {queueInfo === null && !error && (
-          <p className={styles.muted}>Queue API not available (e.g. production or Redis down).</p>
+        {queueInfo === null && !error && !queueLoading && (
+          <p className={styles.muted}>
+            Queue API not available (e.g. production or Redis down).
+          </p>
         )}
         {queueInfo && (
           <>
             <p className={styles.meta}>
               Interval: <strong>{queueInfo.intervalMs / 1000}s</strong> per job ·{" "}
-              Repeatable jobs: <strong>{queueInfo.repeatableJobs.length}</strong>
-              {" "}
-              · Waiting: {queueInfo.jobCounts.waiting} · Active: {queueInfo.jobCounts.active} ·
-              Completed: {queueInfo.jobCounts.completed} · Failed: {queueInfo.jobCounts.failed}
+              Repeatable jobs: <strong>{queueInfo.repeatableJobs.length}</strong> ·
+              Waiting: {queueInfo.jobCounts.waiting} · Active:{" "}
+              {queueInfo.jobCounts.active} · Completed:{" "}
+              {queueInfo.jobCounts.completed} · Failed:{" "}
+              {queueInfo.jobCounts.failed}
             </p>
             <div className={styles.tableWrap}>
               <table className={styles.table}>
                 <thead>
                   <tr>
-                    <th>Job id (monitorId)</th>
+                    <th>Job id (filterKey)</th>
                     <th>Name</th>
                     <th>Next run</th>
                   </tr>
@@ -166,7 +141,7 @@ export default function DevMonitorsQueuePage() {
                       </td>
                     </tr>
                   ) : (
-                    queueInfo.repeatableJobs.map((j) => (
+                    queueInfo.repeatableJobs.map((j: QueueInfo["repeatableJobs"][number]) => (
                       <tr key={j.key}>
                         <td className={styles.mono}>{j.id ?? "—"}</td>
                         <td>{j.name}</td>

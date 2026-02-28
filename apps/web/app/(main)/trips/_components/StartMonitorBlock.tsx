@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { DestinationInfo } from "@shortack/monitor-core";
+import { useCreateMonitor } from "../../entities/monitors";
 import styles from "./StartMonitorBlock.module.css";
 
 type StartMonitorBlockProps = {
@@ -19,32 +20,25 @@ export function StartMonitorBlock({
   defaultUserId = "dev",
 }: StartMonitorBlockProps) {
   const [userId, setUserId] = useState(defaultUserId);
-  const [loading, setLoading] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+
+  const createMonitorMutation = useCreateMonitor();
 
   const handleStart = async () => {
-    setLoading(true);
-    setError(null);
     setCreatedId(null);
     try {
-      const res = await fetch("/api/monitors", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          from: { id: from.id, name: from.name },
-          to: { id: to.id, name: to.name },
-          date,
-        }),
+      const result = await createMonitorMutation.mutateAsync({
+        userId,
+        from,
+        to,
+        date,
       });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error || `Request failed: ${res.status}`);
-      setCreatedId(data.id);
+      setCreatedId(result.id);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to start monitor");
-    } finally {
-      setLoading(false);
+      // Error is already captured in createMonitorMutation.error
+      if (!(e instanceof Error)) {
+        // no-op, we rely on mutation error message below
+      }
     }
   };
 
@@ -67,12 +61,18 @@ export function StartMonitorBlock({
       <button
         type="button"
         onClick={handleStart}
-        disabled={loading}
+        disabled={createMonitorMutation.isPending}
         className={styles.button}
       >
-        {loading ? "Starting…" : "Start monitor"}
+        {createMonitorMutation.isPending ? "Starting…" : "Start monitor"}
       </button>
-      {error && <p className={styles.error}>{error}</p>}
+      {createMonitorMutation.error && (
+        <p className={styles.error}>
+          {createMonitorMutation.error instanceof Error
+            ? createMonitorMutation.error.message
+            : "Failed to start monitor"}
+        </p>
+      )}
       {createdId && (
         <p className={styles.success}>
           Monitor started.{" "}

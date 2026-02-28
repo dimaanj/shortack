@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getMonitorById, updateMonitorStatus } from "@/lib/firestore";
+import {
+  getMonitorById,
+  getActiveMonitorsByFilter,
+  updateMonitorStatus,
+} from "@/lib/firestore";
 import { removeMonitorPollJob } from "@shortack/queue";
+import { getMonitorFilterKey } from "@shortack/monitor-core";
 
 export async function GET(
   _request: NextRequest,
@@ -38,7 +43,15 @@ export async function DELETE(
     if (!monitor) {
       return NextResponse.json({ error: "Monitor not found" }, { status: 404 });
     }
-    await removeMonitorPollJob(id);
+    const filterKey = getMonitorFilterKey(monitor.from, monitor.to, monitor.date);
+    const activeWithSameFilter = await getActiveMonitorsByFilter(
+      monitor.from.id,
+      monitor.to.id,
+      monitor.date
+    );
+    if (activeWithSameFilter.length === 1) {
+      await removeMonitorPollJob(filterKey);
+    }
     await updateMonitorStatus(id, "STOPPED");
     return NextResponse.json({ ok: true });
   } catch (error) {

@@ -31,6 +31,21 @@ export async function listMonitorsByUserId(
   return snap.docs.map((d) => d.data() as MonitorRecord);
 }
 
+/** All ACTIVE monitors for the same route and date (for shared job / filterKey). */
+export async function getActiveMonitorsByFilter(
+  fromId: string,
+  toId: string,
+  date: string
+): Promise<MonitorRecord[]> {
+  const snap = await col()
+    .where("from.id", "==", fromId)
+    .where("to.id", "==", toId)
+    .where("date", "==", date)
+    .where("status", "==", "ACTIVE")
+    .get();
+  return snap.docs.map((d) => d.data() as MonitorRecord);
+}
+
 export async function updateMonitorPrevSlots(
   id: string,
   prevSlots: string[]

@@ -5,20 +5,20 @@ import {
   MONITOR_POLL_INTERVAL_MS,
 } from "@shortack/queue";
 
-/** Dev-only: returns repeatable jobs for monitor:poll queue */
+/** Dev-only: returns job schedulers (repeatable jobs) for monitor:poll queue */
 export async function GET() {
   if (process.env.NODE_ENV === "production") {
     return NextResponse.json({ error: "Not available in production" }, { status: 404 });
   }
   try {
     const queue = getMonitorPollQueue();
-    const repeatableJobs = await queue.getRepeatableJobs();
+    const schedulers = await queue.getJobSchedulers();
     const jobCounts = await queue.getJobCounts();
     return NextResponse.json({
       queueName: MONITOR_POLL_QUEUE_NAME,
       intervalMs: MONITOR_POLL_INTERVAL_MS,
-      repeatableJobs: repeatableJobs.map((j) => ({
-        id: j.id,
+      repeatableJobs: schedulers.map((j) => ({
+        id: j.id ?? j.key,
         key: j.key,
         name: j.name,
         next: j.next,

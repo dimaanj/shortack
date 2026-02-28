@@ -2,13 +2,25 @@
 
 import { useState, useEffect } from "react";
 import { TripDateDisplay } from "./TripDateDisplay";
-import type { DestinationInfo } from "@shortack/monitor-core";
 import { getMaxFutureDateForMonitor } from "@shortack/monitor-core";
+import type { RouteState } from "../domain/types";
+import { useTripSlots } from "../domain/tripQueries";
 
-type RouteState = {
-  from: DestinationInfo | null;
-  to: DestinationInfo | null;
-};
+function useOnlineStatus() {
+  const [online, setOnline] = useState(typeof navigator !== "undefined" ? navigator.onLine : true);
+  useEffect(() => {
+    setOnline(navigator.onLine);
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+  return online;
+}
 
 type TripDateDisplayContainerProps = {
   route: RouteState;
@@ -30,40 +42,21 @@ function getDateRange() {
   return dates;
 }
 
-export function TripDateDisplayContainer({ route, selectedDate, onDateChange }: TripDateDisplayContainerProps) {
-  const [slots, setSlots] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+export function TripDateDisplayContainer({
+  route,
+  selectedDate,
+  onDateChange,
+}: TripDateDisplayContainerProps) {
   const dates = getDateRange();
+  const isOnline = useOnlineStatus();
+  const { slots, isLoading, error } = useTripSlots(route, selectedDate);
 
-  useEffect(() => {
-    if (!route.from || !route.to || !selectedDate) {
-      setSlots([]);
-      setError(null);
-      return;
-    }
-    setLoading(true);
-    setError(null);
-    const params = new URLSearchParams({
-      fromId: route.from.id,
-      fromName: route.from.name,
-      toId: route.to.id,
-      toName: route.to.name,
-      date: selectedDate,
-    });
-    fetch(`/api/bus/slots?${params}`)
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.error) throw new Error(data.error);
-        setSlots(data.slots ?? []);
-      })
-      .catch((e) => {
-        setError(e.message);
-        setSlots([]);
-      })
-      .finally(() => setLoading(false));
-  }, [route.from, route.to, selectedDate]);
+  const errorMessage =
+    error && !isOnline
+      ? "You're offline. Data will refresh when you're back online."
+      : error
+        ? error.message
+        : null;
 
   if (!route.from || !route.to) {
     return (
@@ -121,10 +114,11 @@ export function TripDateDisplayContainer({ route, selectedDate, onDateChange }: 
           fromName={route.from.name}
           toName={route.to.name}
           slots={slots}
-          loading={loading}
-          error={error}
+          loading={isLoading}
+          error={errorMessage}
         />
       )}
     </div>
   );
 }
+

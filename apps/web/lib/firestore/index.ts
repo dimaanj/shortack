@@ -7,6 +7,7 @@ export {
   createMonitor,
   getMonitorById,
   listMonitorsByUserId,
+  getActiveMonitorsByFilter,
   updateMonitorPrevSlots,
   updateMonitorStatus,
 } from "./monitors";

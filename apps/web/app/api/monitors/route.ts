@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMonitor } from "@/lib/firestore";
 import { addMonitorPollJob } from "@shortack/queue";
-import type { DestinationInfo } from "@shortack/monitor-core";
+import { getMonitorFilterKey, type DestinationInfo } from "@shortack/monitor-core";
 import { randomBytes } from "crypto";
 
 function generateId(): string {
@@ -58,7 +58,8 @@ export async function POST(request: NextRequest) {
       to,
       date,
     });
-    await addMonitorPollJob(id);
+    const filterKey = getMonitorFilterKey(from, to, date);
+    await addMonitorPollJob(filterKey);
     return NextResponse.json(record, { status: 201 });
   } catch (error) {
     console.error("POST /api/monitors error:", error);
