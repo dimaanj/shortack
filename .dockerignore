@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.env
+.env.*
+*.log
+.DS_Store
+coverage
+.terraform
+*.tfstate
+.cursor
+.idea
+.vscode
+*.md
+!apps/web/README.md

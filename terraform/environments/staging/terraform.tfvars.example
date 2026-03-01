@@ -1,0 +1,18 @@
+# Скопируйте в terraform.tfvars и подставьте свои значения.
+# Запуск из корня terraform/: terraform plan -var-file=environments/staging/terraform.tfvars
+
+cloud_id     = "<YANDEX_CLOUD_ID>"
+folder_id    = "<FOLDER_ID_STAGING>"
+environment  = "staging"
+zone         = "ru-central1-a"
+
+# Опционально: если не заданы env YANDEX_ACCESS_KEY/YANDEX_SECRET_ACCESS_KEY
+# yandex_access_key = "..."
+# yandex_secret_key = "..."
+
+# Redis: задайте пароль, чтобы создать Managed Redis
+# redis_password = "..."
+
+# Теги образов (CI подставляет при деплое)
+# web_image_tag   = "latest"
+# worker_image_tag = "latest"

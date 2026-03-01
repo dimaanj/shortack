@@ -1,0 +1,7 @@
+# Скопируйте в terraform.tfvars и подставьте свои значения.
+# Запуск из корня terraform/: terraform plan -var-file=environments/prod/terraform.tfvars
+
+cloud_id     = "<YANDEX_CLOUD_ID>"
+folder_id    = "<FOLDER_ID_PROD>"
+environment  = "prod"
+zone         = "ru-central1-a"

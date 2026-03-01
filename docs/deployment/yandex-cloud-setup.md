@@ -2,7 +2,7 @@
 
 Пошаговая инструкция по **пункту 2** плана деплоя: создание облака и каталога, подключение биллинга, создание сервисных аккаунтов для Terraform и для CI.
 
-Ссылка на план: [Yandex Cloud Deploy and CI/CD](../.cursor/plans/yandex_cloud_deploy_and_ci_cd_42a9ae2b.plan.md).
+Ссылка на план: [Yandex Cloud Deploy and CI/CD](../../.cursor/plans/yandex_cloud_deploy_and_ci_cd_42a9ae2b.plan.md).
 
 ---
 
@@ -166,7 +166,7 @@ SA_CI_ID=$(yc iam service-account get shortack-ci --folder-id $FOLDER_ID --forma
 |------|------------|
 | `container-registry.images.pusher` | Пуш образов в Container Registry |
 | `container-registry.images.puller` | Пул образов (для кэша/проверок) |
-| `serverless.containers.editor` | Деплой и обновление Serverless Containers |
+| `serverless.containers.developer` | Деплой и обновление Serverless Containers |
 | `compute.admin` или `compute.editor` | Обновление VM (образ воркера) при деплое |
 
 При использовании Lockbox для секретов CI может понадобиться только если деплой читает секреты; обычно секреты читают уже контейнеры/VM с собственными ролями.
@@ -184,7 +184,7 @@ yc resource-manager folder add-access-binding $FOLDER_ID \
 
 # Деплой Serverless Containers
 yc resource-manager folder add-access-binding $FOLDER_ID \
-  --role serverless.containers.editor \
+  --role serverless.containers.developer \
   --subject serviceAccount:$SA_CI_ID
 
 # Управление VM (обновление образа воркера)

@@ -2,7 +2,7 @@
 
 Документ фиксирует выбранные варианты по каждому компоненту. Используется при настройке Terraform и CI/CD.
 
-Ссылка на план: [Yandex Cloud Deploy and CI/CD](.cursor/plans/) (план деплоя в Yandex Cloud).
+Ссылка на план: [Yandex Cloud Deploy and CI/CD](../../.cursor/plans/) (план деплоя в Yandex Cloud).
 
 ---
 

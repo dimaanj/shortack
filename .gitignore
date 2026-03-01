@@ -12,3 +12,10 @@ out
 *.log
 .DS_Store
 coverage
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+terraform.tfvars
+*.auto.tfvars

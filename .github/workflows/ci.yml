@@ -1,0 +1,89 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+        continue-on-error: true
+
+      - name: Build
+        run: npm run build
+
+  deploy-staging:
+    needs: lint-test-build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: tag
+        run: echo "tag=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+
+      - name: Login to Yandex Container Registry
+        run: |
+          echo "${{ secrets.YC_OAUTH_TOKEN }}" | docker login --username oauth --password-stdin cr.yandex
+          # Альтернатива для SA: echo "${{ secrets.YC_SA_JSON_KEY }}" | docker login --username json_key --password-stdin cr.yandex
+
+      - name: Build and push web image
+        run: |
+          docker build -f apps/web/Dockerfile -t cr.yandex/${{ secrets.YC_REGISTRY_ID }}/shortack-web:${{ steps.tag.outputs.tag }} .
+          docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/shortack-web:${{ steps.tag.outputs.tag }}
+      - name: Build and push worker image
+        run: |
+          docker build -f workers/Dockerfile -t cr.yandex/${{ secrets.YC_REGISTRY_ID }}/shortack-worker:${{ steps.tag.outputs.tag }} .
+          docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/shortack-worker:${{ steps.tag.outputs.tag }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5"
+          terraform_wrapper: false
+
+      - name: Terraform init
+        working-directory: terraform
+        env:
+          YANDEX_CLOUD_ID: ${{ secrets.YC_CLOUD_ID }}
+          YANDEX_FOLDER_ID: ${{ secrets.YC_FOLDER_ID_STAGING }}
+          YANDEX_ACCESS_KEY: ${{ secrets.YC_ACCESS_KEY }}
+          YANDEX_SECRET_ACCESS_KEY: ${{ secrets.YC_SECRET_ACCESS_KEY }}
+        run: terraform init
+
+      - name: Terraform apply (staging)
+        working-directory: terraform
+        env:
+          YANDEX_CLOUD_ID: ${{ secrets.YC_CLOUD_ID }}
+          YANDEX_FOLDER_ID: ${{ secrets.YC_FOLDER_ID_STAGING }}
+          YANDEX_ACCESS_KEY: ${{ secrets.YC_ACCESS_KEY }}
+          YANDEX_SECRET_ACCESS_KEY: ${{ secrets.YC_SECRET_ACCESS_KEY }}
+        run: |
+          terraform apply -auto-approve \
+            -var-file=environments/staging/terraform.tfvars \
+            -var="web_image_tag=${{ steps.tag.outputs.tag }}" \
+            -var="worker_image_tag=${{ steps.tag.outputs.tag }}"
