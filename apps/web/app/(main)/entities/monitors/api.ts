@@ -55,6 +55,16 @@ export async function getMonitors(userId: string): Promise<MonitorRecord[]> {
   return Array.isArray(data) ? (data as MonitorRecord[]) : [];
 }
 
+export async function getMonitor(id: string): Promise<MonitorRecord | null> {
+  const res = await fetch(`/api/monitors/${id}`);
+  if (res.status === 404) return null;
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error((data as { error?: string }).error || `Request failed: ${res.status}`);
+  }
+  return data as MonitorRecord;
+}
+
 export async function stopMonitor(id: string): Promise<void> {
   const res = await fetch(`/api/monitors/${id}`, { method: "DELETE" });
   const data = await res.json().catch(() => ({}));

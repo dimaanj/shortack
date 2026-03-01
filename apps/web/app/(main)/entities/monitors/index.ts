@@ -3,5 +3,5 @@
  * Other slices should import only from this file.
  */
 
-export { useCreateMonitor, useMonitors, useStopMonitor } from "./model";
+export { useCreateMonitor, useMonitor, useMonitors, useStopMonitor } from "./model";
 export type { CreateMonitorInput, CreateMonitorResponse } from "./api";

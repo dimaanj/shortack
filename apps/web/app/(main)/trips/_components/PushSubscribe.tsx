@@ -51,6 +51,7 @@ export function PushSubscribe({ defaultUserId = "dev" }: { defaultUserId?: strin
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
       const subJson = sub.toJSON();
+      if (!subJson.endpoint) throw new Error("Push subscription has no endpoint");
       console.log('subJson', subJson);
       await pushSubscribeMutation.mutateAsync({
         userId,

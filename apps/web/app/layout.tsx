@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { QueryClientProviderWrapper } from "./query-client";
+import { SessionProvider } from "./_components/SessionProvider";
 
 export const metadata: Metadata = {
   title: "Shortack",
@@ -18,7 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <QueryClientProviderWrapper>{children}</QueryClientProviderWrapper>
+        <SessionProvider>
+          <QueryClientProviderWrapper>{children}</QueryClientProviderWrapper>
+        </SessionProvider>
       </body>
     </html>
   );

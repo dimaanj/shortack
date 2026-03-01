@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { createMonitor } from "@/lib/firestore";
 import { addMonitorPollJob } from "@shortack/queue";
 import { getMonitorFilterKey, type DestinationInfo } from "@shortack/monitor-core";
 import { randomBytes } from "crypto";
+
+function sessionUserId(session: { user?: { id?: string } } | null): string | null {
+  const id = session?.user && "id" in session.user ? session.user.id : null;
+  return typeof id === "string" ? id : null;
+}
 
 function generateId(): string {
   return randomBytes(4).toString("hex");
@@ -31,6 +38,9 @@ function parseBody(body: unknown): {
 }
 
 export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions);
+  const sessionUserIdValue = sessionUserId(session as { user?: { id?: string } } | null);
+
   let body: unknown;
   try {
     body = await request.json();
@@ -44,7 +54,9 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
-  const { userId, from, to, date } = parsed;
+  const fromBody = parsed.userId;
+  const userId = sessionUserIdValue ?? fromBody;
+  const { from, to, date } = parsed;
   const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
   if (!dateRegex.test(date)) {
     return NextResponse.json({ error: "Invalid date format (use yyyy-mm-dd)" }, { status: 400 });
@@ -71,10 +83,13 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const userId = request.nextUrl.searchParams.get("userId");
+  const session = await getServerSession(authOptions);
+  const sessionUserIdValue = sessionUserId(session as { user?: { id?: string } } | null);
+  const queryUserId = request.nextUrl.searchParams.get("userId");
+  const userId = sessionUserIdValue ?? queryUserId;
   if (!userId) {
     return NextResponse.json(
-      { error: "Missing userId query parameter" },
+      { error: "Missing userId (session or query parameter)" },
       { status: 400 }
     );
   }

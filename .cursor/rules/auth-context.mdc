@@ -1,0 +1,21 @@
+---
+description: При задачах по аутентификации (auth, login, session, Telegram, OAuth2, email) начинать с документации в docs/auth
+---
+
+# Контекст по аутентификации
+
+При задачах по аутентификации (auth, login, session, Telegram Mini App, Login Widget, OAuth2, Google, email magic link) **начинать с документации**:
+
+- **docs/auth/README.md** — обзор фичи и роли компонентов
+- **docs/auth/architecture.md** — архитектура, диаграммы, файловая структура
+- **docs/auth/flows.md** — сценарии входа (Mini App, Login Widget, Google, Email) с пошаговым описанием
+- **docs/auth/api-and-config.md** — эндпоинты, использование сессии в API, переменные окружения
+
+Использовать эту документацию как контекст перед изменениями кода в:
+
+- `apps/web/lib/auth.ts`
+- `apps/web/lib/telegram-auth.ts`
+- `apps/web/lib/firestore/authTokens.ts`
+- `apps/web/app/api/auth/*`
+- `apps/web/app/(main)/login/*`
+- `apps/web/app/(tg)/*`

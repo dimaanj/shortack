@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { PwaShell } from "./_components/PwaShell";
+import { AuthLinks } from "./_components/AuthLinks";
 
 export default function MainLayout({
   children,
@@ -32,6 +33,9 @@ export default function MainLayout({
             Dev: Monitors &amp; Queue
           </Link>
         )}
+        <span style={{ marginLeft: "auto" }}>
+          <AuthLinks />
+        </span>
       </header>
       <main style={{ padding: "2rem" }}>{children}</main>
     </div>

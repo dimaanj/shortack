@@ -69,14 +69,27 @@ export function MonitorsPageContainer() {
             <tbody>
               {monitors.map((m: MonitorRecord) => (
                 <tr key={m.id}>
-                  <td>{m.from.name}</td>
-                  <td>{m.to.name}</td>
                   <td>
-                    {new Date(m.date + "T12:00:00").toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    <Link href={`/monitors/${m.id}`} className={styles.rowLink}>
+                      {m.from.name}
+                    </Link>
+                  </td>
+                  <td>
+                    <Link href={`/monitors/${m.id}`} className={styles.rowLink}>
+                      {m.to.name}
+                    </Link>
+                  </td>
+                  <td>
+                    <Link href={`/monitors/${m.id}`} className={styles.rowLink}>
+                      {new Date(m.date + "T12:00:00").toLocaleDateString(
+                        "en-US",
+                        {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        }
+                      )}
+                    </Link>
                   </td>
                   <td>
                     <span
@@ -91,6 +104,9 @@ export function MonitorsPageContainer() {
                   </td>
                   <td>{m.prevSlots?.length ?? 0}</td>
                   <td>
+                    <Link href={`/monitors/${m.id}`} className={styles.viewLink}>
+                      View
+                    </Link>
                     {m.status === "ACTIVE" && (
                       <button
                         type="button"
